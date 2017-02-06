@@ -41,5 +41,5 @@ def run(demos):
         print "Need a demo name"
         sys.exit(2)
     w = Window()
-    prepare(w)
+    data = prepare(w)
     run()
