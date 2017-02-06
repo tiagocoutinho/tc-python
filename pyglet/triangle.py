@@ -32,6 +32,24 @@ def vertex_array(window):
         gl.glVertexPointer(2, gl.GL_INT, 0, positions_gl)
         gl.glDrawArrays(triangle.vertex_mode, 0, 3)
 
+def vertex_array_numpy(window):
+    import numpy
+    from pyglet import gl
+
+    gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
+
+    triangle = get_triangle(window)
+    positions = numpy.array(triangle.positions, dtype=numpy.int32)
+    positions_gl = numpy.ctypeslib.as_ctypes(positions)
+
+    @window.event
+    def on_draw():
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+        gl.glLoadIdentity()
+        gl.glVertexPointer(2, gl.GL_INT, 0, positions_gl)
+        gl.glDrawArrays(triangle.vertex_mode, 0, 3)
+    return triangle
+
 def graphics(window):
     from pyglet import gl
     from pyglet.graphics import draw
