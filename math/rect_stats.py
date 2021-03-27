@@ -8,29 +8,36 @@ import numpy
 IMAX = sys.maxsize
 IMIN = -IMAX - 1
 
-Stats = collections.namedtuple("Stats", "min max sum mean std")
+Stats = collections.namedtuple(
+    "Stats", "min max sum mean std projection"
+)
 
 
 def stats(data):
     return Stats(
         data.min(), data.max(), data.sum(), data.mean(), data.std(),
+        (data.sum(0), data.sum(1))
     )
 
 
 def py_stats_int(data):
     # with proper std
     m, M, total, var, N = IMAX, IMIN, 0, 0, data.size
-    for row in data:
-        for point in row:
+    proj_0 = numpy.zeros(data.shape[0], dtype='i8')
+    proj_1 = numpy.zeros(data.shape[1], dtype='i8')
+    for d0, row in enumerate(data):
+        for d1, point in enumerate(row):
             m, M = min(m, point), max(M, point)
             total += point
+            proj_0[d0] += point
+            proj_1[d1] += point
     mean = total / N
     for row in data:
         for point in row:
             var += (point - mean)**2
     var /= N
     std = math.sqrt(var)
-    return Stats(m, M, total, mean, std)
+    return Stats(m, M, total, mean, std, (proj_0, proj_1))
 
 
 numba_stats_int = numba.njit()(py_stats_int)
@@ -41,15 +48,19 @@ def py_stats_int_fast_std(data):
     # with std in one loop (may be imprecise for big numbers)
     # (see https://www.strchr.com/standard_deviation_in_one_pass)
     m, M, total, sq_total, N = IMAX, IMIN, 0, 0.0, data.size
-    for row in data:
-        for point in row:
+    proj_0 = numpy.zeros(data.shape[0], dtype='i8')
+    proj_1 = numpy.zeros(data.shape[1], dtype='i8')
+    for d0, row in enumerate(data):
+        for d1, point in enumerate(row):
             m, M = min(m, point), max(M, point)
             total += point
             sq_total += point * point
+            proj_0[d0] += point
+            proj_1[d1] += point
     mean = total / N
     var = sq_total / N - mean * mean
     std = math.sqrt(var)
-    return Stats(m, M, total, mean, std)
+    return Stats(m, M, total, mean, std, (proj_0, proj_1))
 
 
 numba_stats_int_fast_std = numba.njit()(py_stats_int_fast_std)
