@@ -12,7 +12,7 @@ Stats = collections.namedtuple("Stats", "min max sum mean std projection")
 
 
 def stats(data):
-    proj = data.sum(0), data.sum(1)
+    proj = data.sum(1), data.sum(0)
     return Stats(data.min(), data.max(), proj[0].sum(), data.mean(), data.std(), proj)
 
 
@@ -36,7 +36,7 @@ def py_stats_int(data):
     mean = total / N
     var = (ex2 - (ex * ex) / N) / N
     std = math.sqrt(var)
-    return Stats(m, M, total, mean, std, (proj_1, proj_0))
+    return Stats(m, M, total, mean, std, (proj_0, proj_1))
 
 
 numba_stats_int = numba.jit(nopython=True, nogil=True)(py_stats_int)
@@ -59,7 +59,7 @@ def test_stats():
         data.sum(),
         data.mean(),
         data.std(),
-        (data.sum(0), data.sum(1)),
+        (data.sum(1), data.sum(0)),
     )
 
     cmp_stats(stats(data), expected)
