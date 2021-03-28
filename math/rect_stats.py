@@ -43,13 +43,13 @@ numba_stats_int = numba.jit(nopython=True, nogil=True)(py_stats_int)
 numba_stats_int.__name__ = "numba_stats_int"
 
 
-def cmp_stats(s1, s2):
-    assert s1[:5] == s2[:5]
-    assert (s1.projection[0] == s2.projection[0]).all()
-    assert (s1.projection[1] == s2.projection[1]).all()
-
-
 def test_stats():
+
+    def cmp_stats(s1, s2):
+        assert s1[:5] == s2[:5]
+        assert (s1.projection[0] == s2.projection[0]).all()
+        assert (s1.projection[1] == s2.projection[1]).all()
+
     data = numpy.arange(800, dtype="i4")
     data.shape = 40, -1
 
