@@ -68,10 +68,14 @@ def test_stats():
 
 
 def profile_stats():
+    sizes = (1280, 720), (1920, 1080), (2560, 1440)
+    dtypes = "i1", "i2", "i4", "i8"
+
     msg = "Warm up numba"
     print(f"{msg:.<50} ", end="", flush=True)
-    d = numpy.array([[1, 2], [3, 4]], dtype="i4")
-    numba_stats_int(d)
+    for dtype in dtypes:
+        d = numpy.array([[1, 2], [3, 4]], dtype=dtype)
+        numba_stats_int(d)
     print("DONE!")
 
     msg = "Running tests"
@@ -90,9 +94,6 @@ def profile_stats():
         print(f"{msg:.<50} ", end="", flush=True)
         r = timeit(test, setup=setup, globals=namespace, number=number) / number
         print(f"{r*1000:.3f} ms per interaction")
-
-    sizes = (1280, 720), (1920, 1080), (2560, 1440)
-    dtypes = "i1", "i2", "i4", "i8"
 
     # Just for reference a pure python
     profile(py_stats_int, (1280, 720), "i4", 1)
