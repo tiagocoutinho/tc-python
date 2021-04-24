@@ -39,7 +39,7 @@ def py_stats_int(data):
     return Stats(m, M, total, mean, std, (proj_0, proj_1))
 
 
-numba_stats_int = numba.jit(nopython=True, nogil=True)(py_stats_int)
+numba_stats_int = numba.jit(nopython=True)(py_stats_int)
 numba_stats_int.__name__ = "numba_stats_int"
 
 
@@ -75,6 +75,7 @@ def profile_stats():
     print(f"{msg:.<50} ", end="", flush=True)
     for dtype in dtypes:
         d = numpy.array([[1, 2], [3, 4]], dtype=dtype)
+        stats(d)
         numba_stats_int(d)
     print("DONE!")
 
