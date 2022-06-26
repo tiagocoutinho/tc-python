@@ -8,6 +8,11 @@ from concurrent.futures import ThreadPoolExecutor
 import click
 
 
+log = logging.getLogger("server")
+mlog = logging.getLogger("master")
+wlog = log.getChild("worker")
+
+
 def config(log_level):
     fmt = "%(asctime)s %(levelname)s %(processName)s.%(threadName)s %(name)s %(message)s"
     logging.basicConfig(level=log_level.upper(), format=fmt)
@@ -24,42 +29,41 @@ def Server(addr, **kwargs):
 
 
 def handle_client(sock, addr):
-    log = logging.getLogger("worker")
-    log.info("Handling client from %r", addr)
+    wlog.info("Handling client from %r", addr)
     with sock:
         try:
             while True:
                 data = sock.recv(1024)
                 if not data:
-                    log.info("Client %r closed connection", addr)
+                    wlog.info("Client %r closed connection", addr)
                     return
-                log.debug("req: %r", data)
+                wlog.debug("req: %r", data)
                 reply = data[::-1]
                 #time.sleep(0.001)
                 sock.sendall(reply)
-                log.debug("reply: %r", reply)
+                wlog.debug("reply: %r", reply)
         except OSError as error:
-            log.info("socket error from %r: %r", addr, error)
+            wlog.info("socket error from %r: %r", addr, error)
 
 
 def worker_loop(server):
+    wlog.info("ready to accept requests")
     while True:
         handle_client(*server.accept())
 
 
 def worker_main(server, threads, log_level):
     config(log_level)
-    log = logging.getLogger("worker")
-    log.info("starting...")
-    log.info("ready to handle requests!")
+    wlog.info("starting worker...")
     try:
-        if threads == -1:
-            worker_loop(server)
-        else:
-            with ThreadPoolExecutor(max_workers=threads, thread_name_prefix="TH") as exe:
-                while True:
-                    client, addr = server.accept()
-                    exe.submit(handle_client, client, addr, log)
+        with server:
+            if threads == -1:
+                worker_loop(server)
+            else:
+                with ThreadPoolExecutor(max_workers=threads, thread_name_prefix="TH") as exe:
+                    for _ in range(threads):
+                        exe.submit(worker_loop, server)
+
     except Exception as error:
         log.info("unhandled error: %r", error)
     except KeyboardInterrupt:
