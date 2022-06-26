@@ -43,7 +43,7 @@ def worker_terminate(sig, ff):
 
 def worker_main(server, threads, log_level):
     config(log_level)
-    log = logging.getLogger(f"prefork.worker")
+    log = logging.getLogger("worker")
     log.info("starting...")
     signal.signal(signal.SIGTERM, worker_terminate)
     log.info("ready to handle requests!")
@@ -69,24 +69,27 @@ def worker_main(server, threads, log_level):
             log.error("error in shutdown: %r", error)
 
 
+def master_main(server, log_level, nb_threads):
+    log = logging.getLogger("master")
+
+    with server:
+        try:
+            worker_main(server, nb_threads, log_level)
+        except KeyboardInterrupt:
+            log.info("ctrl-C pressed. Bailing out")
+        finally:
+            log.info("start master graceful shutdown!")
+            log.info("finished master graceful shutdown")
 
 
-@click.command()
-@click.option('--listen', "addr", default=':5000', type=address, show_default=True)
-@click.option('--log-level', default='INFO', show_default=True)
-@click.option('-p', '--processes', "nb_processes", default=1, show_default=True)
-@click.option('-t', '--threads', "nb_threads", default=-1, show_default=True)
-def main(addr, log_level, nb_processes, nb_threads):
-    config(log_level)
-    log = logging.getLogger("prefork.supervisor")
+def master_pre_fork(server, log_level, nb_processes, nb_threads):
+    log = logging.getLogger("master")
 
-    ctx = multiprocessing.get_context("spawn")
+    ctx = multiprocessing.get_context("fork")
 
-    log.info("start listening to %r", addr)
-    server = socket.create_server(addr, reuse_port=False, backlog=5)
     log.info("bootstraping %d processes...", nb_processes)
     workers = [
-        ctx.Process(target=worker_main, args=(server, nb_threads, log_level), name=f"W{i:03d}")
+        ctx.Process(target=worker_main, args=(server, nb_threads, log_level), name=f"Worker-{i:02d}")
         for i in range(nb_processes)
     ]
     log.info("ready to supervise workers")
@@ -99,9 +102,26 @@ def main(addr, log_level, nb_processes, nb_threads):
         finally:
             log.info("start master graceful shutdown!")
             [worker.join() for worker in workers]
-#            [worker.terminate() for worker in workers]
+            [worker.join() for worker in workers]
             log.info("finished master graceful shutdown")
 
+
+@click.command()
+@click.option('--listen', "addr", default=':5000', type=address, show_default=True)
+@click.option('--log-level', default='INFO', show_default=True)
+@click.option('-p', '--processes', "nb_processes", default=-1, show_default=True)
+@click.option('-t', '--threads', "nb_threads", default=-1, show_default=True)
+def main(addr, log_level, nb_processes, nb_threads):
+    config(log_level)
+    log = logging.getLogger("master")
+    log.info("start listening to %r", addr)
+
+    server = socket.create_server(addr, reuse_port=False, backlog=5)
+
+    if nb_processes == -1:
+        master_main(server, log_level, nb_threads)
+    else:
+        master_pre_fork(server, log_level, nb_processes, nb_threads)
 
 if __name__ == "__main__":
     main()
