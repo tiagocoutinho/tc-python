@@ -23,7 +23,8 @@ def Server(addr, **kwargs):
     return socket.create_server(addr)
 
 
-def handle_client(sock, addr, log):
+def handle_client(sock, addr):
+    log = logging.getLogger("worker")
     log.info("Handling client from %r", addr)
     with sock:
         try:
@@ -41,6 +42,11 @@ def handle_client(sock, addr, log):
             log.info("socket error from %r: %r", addr, error)
 
 
+def worker_loop(server):
+    while True:
+        handle_client(*server.accept())
+
+
 def worker_main(server, threads, log_level):
     config(log_level)
     log = logging.getLogger("worker")
@@ -48,9 +54,7 @@ def worker_main(server, threads, log_level):
     log.info("ready to handle requests!")
     try:
         if threads == -1:
-            while True:
-                client, addr = server.accept()
-                handle_client(client, addr, log)
+            worker_loop(server)
         else:
             with ThreadPoolExecutor(max_workers=threads, thread_name_prefix="TH") as exe:
                 while True:
