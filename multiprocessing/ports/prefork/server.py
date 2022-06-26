@@ -69,10 +69,9 @@ def worker_main(server, threads, log_level):
             log.error("error in shutdown: %r", error)
 
 
-def master_main(server, log_level, nb_threads):
+def master_main(addr, log_level, nb_threads):
     log = logging.getLogger("master")
-
-    with server:
+    with socket.create_server(addr, reuse_port=False, backlog=5) as server:
         try:
             worker_main(server, nb_threads, log_level)
         except KeyboardInterrupt:
@@ -82,18 +81,19 @@ def master_main(server, log_level, nb_threads):
             log.info("finished master graceful shutdown")
 
 
-def master_pre_fork(server, log_level, nb_processes, nb_threads):
+def master_pre_fork(addr, log_level, nb_processes, nb_threads):
     log = logging.getLogger("master")
-
     ctx = multiprocessing.get_context("fork")
 
-    log.info("bootstraping %d processes...", nb_processes)
-    workers = [
-        ctx.Process(target=worker_main, args=(server, nb_threads, log_level), name=f"Worker-{i:02d}")
-        for i in range(nb_processes)
-    ]
-    log.info("ready to supervise workers")
-    with server:
+    with socket.create_server(addr) as server:
+        log.info("bootstraping %d processes...", nb_processes)
+
+        workers = [
+            ctx.Process(target=worker_main, args=(server, nb_threads, log_level), name=f"Worker-{i:02d}")
+            for i in range(nb_processes)
+        ]
+        log.info("ready to supervise workers")
+
         try:
             [worker.start() for worker in workers]
             [worker.join() for worker in workers]
@@ -116,12 +116,10 @@ def main(addr, log_level, nb_processes, nb_threads):
     log = logging.getLogger("master")
     log.info("start listening to %r", addr)
 
-    server = socket.create_server(addr, reuse_port=False, backlog=5)
-
     if nb_processes == -1:
-        master_main(server, log_level, nb_threads)
+        master_main(addr, log_level, nb_threads)
     else:
-        master_pre_fork(server, log_level, nb_processes, nb_threads)
+        master_pre_fork(addr, log_level, nb_processes, nb_threads)
 
 if __name__ == "__main__":
     main()
