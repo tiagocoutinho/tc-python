@@ -26,7 +26,7 @@ def address(addr):
 
 def Server(addr, **kwargs):
     kwargs.setdefault("backlog", 5)
-    return socket.create_server(addr)
+    return socket.create_server(addr, **kwargs)
 
 
 def handle_client(sock, addr):
@@ -72,8 +72,6 @@ def worker_main(server, threads, log_level):
                     worker_loop(server, handler)
             else:
                 worker_loop(server, handle_client)
-
-
     except Exception as error:
         wlog.info("unhandled error: %r", error)
     except KeyboardInterrupt:
@@ -82,8 +80,8 @@ def worker_main(server, threads, log_level):
         wlog.info("process graceful shutdown")
 
 
-def master_main(addr, log_level, nb_threads):
-    server = Server(addr)
+def master_main(addr, reuse_port, log_level, nb_threads):
+    server = Server(addr, reuse_port=reuse_port)
     with server:
         try:
             worker_main(server, nb_threads, log_level)
@@ -93,9 +91,9 @@ def master_main(addr, log_level, nb_threads):
             mlog.info("master graceful shutdown")
 
 
-def master_pre_fork(addr, log_level, context, nb_processes, nb_threads):
-    ctx = multiprocessing.get_context(context)
-    server = Server(addr)
+def master_pre_fork(addr, reuse_port, log_level, nb_processes, nb_threads):
+    ctx = multiprocessing.get_context("fork")
+    server = Server(addr, reuse_port=reuse_port)
     pool = ctx.Pool(processes=nb_processes)
     with server, pool:
         args = server, nb_threads, log_level
@@ -108,16 +106,13 @@ def master_pre_fork(addr, log_level, context, nb_processes, nb_threads):
 @click.option('--log-level', default='INFO', type=str.upper, show_default=True)
 @click.option('-p', '--processes', "nb_processes", default=0, show_default=True)
 @click.option('-t', '--threads', "nb_threads", default=0, show_default=True)
-@click.option(
-    '-c', '--context', default="fork",
-    type=click.Choice(["fork", "forkserver", "spawn"]), show_default=True
-)
-def main(addr, log_level, nb_processes, nb_threads, context):
+@click.option("--reuse-port", is_flag=True)
+def main(addr, log_level, nb_processes, nb_threads, reuse_port):
     config(log_level)
     if nb_processes:
-        master_pre_fork(addr, log_level, context, nb_processes, nb_threads)
+        master_pre_fork(addr, reuse_port, log_level, nb_processes, nb_threads)
     else:
-        master_main(addr, log_level, nb_threads)
+        master_main(addr, reuse_port, log_level, nb_threads)
 
 
 if __name__ == "__main__":
