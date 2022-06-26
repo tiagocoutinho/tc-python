@@ -93,8 +93,8 @@ def master_main(addr, log_level, nb_threads):
             mlog.info("master graceful shutdown")
 
 
-def master_pre_fork(addr, log_level, nb_processes, nb_threads):
-    ctx = multiprocessing.get_context("fork")
+def master_pre_fork(addr, log_level, context, nb_processes, nb_threads):
+    ctx = multiprocessing.get_context(context)
     server = Server(addr)
     pool = ctx.Pool(processes=nb_processes)
     with server, pool:
@@ -108,10 +108,14 @@ def master_pre_fork(addr, log_level, nb_processes, nb_threads):
 @click.option('--log-level', default='INFO', type=str.upper, show_default=True)
 @click.option('-p', '--processes', "nb_processes", default=0, show_default=True)
 @click.option('-t', '--threads', "nb_threads", default=0, show_default=True)
-def main(addr, log_level, nb_processes, nb_threads):
+@click.option(
+    '-c', '--context', default="fork",
+    type=click.Choice(["fork", "forkserver", "spawn"]), show_default=True
+)
+def main(addr, log_level, nb_processes, nb_threads, context):
     config(log_level)
     if nb_processes:
-        master_pre_fork(addr, log_level, nb_processes, nb_threads)
+        master_pre_fork(addr, log_level, context, nb_processes, nb_threads)
     else:
         master_main(addr, log_level, nb_threads)
 
