@@ -1,9 +1,8 @@
 """Simple socket with pre-fork model"""
-import time
-import signal
+
 import socket
 import logging
-import multiprocessing
+import multiprocessing.pool
 from concurrent.futures import ThreadPoolExecutor
 
 import click
@@ -17,6 +16,11 @@ def config(log_level):
 def address(addr):
     host, port = addr.split(':', 1)
     return host, int(port)
+
+
+def Server(addr, **kwargs):
+    kwargs.setdefault("backlog", 5)
+    return socket.create_server(addr)
 
 
 def handle_client(sock, addr, log):
@@ -37,15 +41,10 @@ def handle_client(sock, addr, log):
             log.info("socket error from %r: %r", addr, error)
 
 
-def worker_terminate(sig, ff):
-    print("died", sig, ff)
-
-
 def worker_main(server, threads, log_level):
     config(log_level)
     log = logging.getLogger("worker")
     log.info("starting...")
-    signal.signal(signal.SIGTERM, worker_terminate)
     log.info("ready to handle requests!")
     try:
         if threads == -1:
@@ -71,7 +70,8 @@ def worker_main(server, threads, log_level):
 
 def master_main(addr, log_level, nb_threads):
     log = logging.getLogger("master")
-    with socket.create_server(addr, reuse_port=False, backlog=5) as server:
+    server = Server(addr)
+    with server:
         try:
             worker_main(server, nb_threads, log_level)
         except KeyboardInterrupt:
@@ -84,26 +84,12 @@ def master_main(addr, log_level, nb_threads):
 def master_pre_fork(addr, log_level, nb_processes, nb_threads):
     log = logging.getLogger("master")
     ctx = multiprocessing.get_context("fork")
-
-    with socket.create_server(addr) as server:
-        log.info("bootstraping %d processes...", nb_processes)
-
-        workers = [
-            ctx.Process(target=worker_main, args=(server, nb_threads, log_level), name=f"Worker-{i:02d}")
-            for i in range(nb_processes)
-        ]
-        log.info("ready to supervise workers")
-
-        try:
-            [worker.start() for worker in workers]
-            [worker.join() for worker in workers]
-        except KeyboardInterrupt:
-            log.info("ctrl-C pressed. Bailing out")
-        finally:
-            log.info("start master graceful shutdown!")
-            [worker.join() for worker in workers]
-            [worker.join() for worker in workers]
-            log.info("finished master graceful shutdown")
+    server = Server(addr)
+    pool = ctx.Pool(processes=nb_processes)
+    with server, pool:
+        args = server, nb_threads, log_level
+        result = pool.starmap_async(worker_main, nb_processes*[args])
+        result.wait()
 
 
 @click.command()
@@ -120,6 +106,7 @@ def main(addr, log_level, nb_processes, nb_threads):
         master_main(addr, log_level, nb_threads)
     else:
         master_pre_fork(addr, log_level, nb_processes, nb_threads)
+
 
 if __name__ == "__main__":
     main()
