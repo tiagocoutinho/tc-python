@@ -12,6 +12,8 @@ import click
 mlog = logging.getLogger("master")
 wlog = logging.getLogger("worker")
 
+STOP_MESSAGE = b"STOP\n"
+
 
 def config(log_level):
     fmt = "%(asctime)s %(levelname)-5s %(processName)s/%(threadName)s/%(name)s %(message)s"
@@ -50,6 +52,8 @@ def handle_client(sock, addr):
 
 def worker_loop(server, channel):
     wlog.info("ready to accept requests")
+    server.setblocking(False)
+    channel.setblocking(False)
     try:
         with server, channel:
             while True:
@@ -57,7 +61,7 @@ def worker_loop(server, channel):
                 for sock in socks:
                     if sock is channel:
                         wlog.info("received stop signal")
-                        assert channel.recv(1024) == b"STOP\n"
+                        assert channel.recv(1024) == STOP_MESSAGE
                         return
                     elif sock is server:
                         try:
@@ -67,14 +71,15 @@ def worker_loop(server, channel):
                             wlog.warning("accept error: %r", error)
                             return
     finally:
-        wlog.info("thread graceful shutdown")
+        wlog.info("start thread graceful shutdown...")
+        wlog.info("finished thread graceful shutdown")
 
 
 def worker_main(server, threads, log_level):
     config(log_level)
     wlog.info("starting worker process...")
-    try:
-        with server:
+    with server:
+        try:
             if threads:
                 channels = []
                 for i in range(threads):
@@ -92,18 +97,18 @@ def worker_main(server, threads, log_level):
                     thread.join()
             else:
                 worker_loop(server, None)
-    except Exception as error:
-        wlog.info("unhandled error: %r", error)
-    except KeyboardInterrupt:
-        wlog.info("Ctrl-C pressed. Bailing out")
-    finally:
-        wlog.info("start worker process graceful shutdown")
-        server.close()
-        if threads:
-            for _, channel in channels:
-                channel.sendall(b"STOP\n")
-            for thread, _ in channels:
-                thread.join()
+        except Exception as error:
+            wlog.info("unhandled error: %r", error)
+        except KeyboardInterrupt:
+            wlog.info("Ctrl-C pressed. Bailing out")
+        finally:
+            wlog.info("start worker process graceful shutdown...")
+            if threads:
+                for _, channel in channels:
+                    channel.sendall(STOP_MESSAGE)
+                for thread, _ in channels:
+                    thread.join()
+            wlog.info("finished worker process graceful shutdown")
 
 
 def master_main(addr, reuse_port, log_level, nb_threads):
@@ -113,7 +118,8 @@ def master_main(addr, reuse_port, log_level, nb_threads):
         except KeyboardInterrupt:
             mlog.info("ctrl-C pressed. Bailing out")
         finally:
-            mlog.info("master graceful shutdown")
+            mlog.info("start master graceful shutdown...")
+            mlog.info("finished master graceful shutdown")
 
 
 def master_pre_fork(addr, reuse_port, log_level, nb_processes, nb_threads):
