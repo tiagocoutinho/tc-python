@@ -1,5 +1,7 @@
 """Simple socket with pre-fork model"""
 
+import sys
+import time
 import select
 import socket
 import logging
@@ -15,8 +17,11 @@ wlog = logging.getLogger("worker")
 STOP_MESSAGE = b"STOP\n"
 
 
+exiting = False
+
+
 def config(log_level):
-    fmt = "%(asctime)s %(levelname)-5s %(processName)s/%(threadName)s/%(name)s %(message)s"
+    fmt = "%(asctime)s %(levelname)-9s %(processName)s/%(threadName)s/%(name)s %(message)s"
     logging.basicConfig(level=log_level, format=fmt)
 
     #logger = multiprocessing.get_logger()
@@ -30,7 +35,9 @@ def address(addr):
 
 def Server(addr, **kwargs):
     kwargs.setdefault("backlog", 5)
-    return socket.create_server(addr, **kwargs)
+    server = socket.create_server(addr, **kwargs)
+    #server.setblocking(False)
+    return server
 
 
 def handle_client(sock, addr):
@@ -50,23 +57,33 @@ def handle_client(sock, addr):
             wlog.info("socket error from %r: %r", addr, error)
 
 
+def accept(server):
+    client, addr = server.accept()
+    return handle_client(client, addr)
+
+
 def worker_loop(server, channel):
     wlog.info("ready to accept requests")
-    server.setblocking(False)
-    channel.setblocking(False)
+    sockets = (server, channel)
     try:
         with server, channel:
             while True:
-                socks, _, _ = select.select((server, channel), (), ())
+                socks, _, errors = select.select(sockets, (), sockets)
+                if errors:
+                    if channel in errors:
+                        return
+                    if channel in socks:
+                        wlog.error("accept error. Exiting thread...")
+                        break
                 for sock in socks:
                     if sock is channel:
                         wlog.info("received stop signal")
-                        assert channel.recv(1024) == STOP_MESSAGE
-                        return
+                        if not channel.recv(1024):
+                            return
                     elif sock is server:
                         try:
-                            client, addr = server.accept()
-                            handle_client(client, addr)
+                            wlog.info("start accept")
+                            accept(server)
                         except OSError as error:
                             wlog.warning("accept error: %r", error)
                             return
@@ -75,7 +92,7 @@ def worker_loop(server, channel):
         wlog.info("finished thread graceful shutdown")
 
 
-def worker_main(server, threads, log_level):
+def worker_main(server, threads, log_level, timeout=1):
     config(log_level)
     wlog.info("starting worker process...")
     with server:
@@ -84,6 +101,7 @@ def worker_main(server, threads, log_level):
                 channels = []
                 for i in range(threads):
                     s1, s2 = socket.socketpair()
+                    s2.setblocking(False)
                     args = server, s2
                     thread = threading.Thread(
                         target=worker_loop,
@@ -105,9 +123,18 @@ def worker_main(server, threads, log_level):
             wlog.info("start worker process graceful shutdown...")
             if threads:
                 for _, channel in channels:
-                    channel.sendall(STOP_MESSAGE)
+                    channel.close()
+                    #channel.sendall(STOP_MESSAGE)
+                start = time.monotonic()
                 for thread, _ in channels:
-                    thread.join()
+                    remaining = timeout - (time.monotonic() - start)
+                    if remaining < 0:
+                        wlog.warning("timeout waiting for worker threads")
+                        sys.exit()
+                    thread.join(remaining)
+                if any(thread.is_alive() for thread, _ in channels):
+                    wlog.warning("some worker threads are still alive")
+                    sys.exit()
             wlog.info("finished worker process graceful shutdown")
 
 
