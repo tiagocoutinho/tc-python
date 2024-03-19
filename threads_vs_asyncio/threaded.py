@@ -15,7 +15,7 @@ def do(t=30):
 def main():
     # on my machine I measured ~2.5s to start a group of 10_000 threads 
     # we're gonna use 1 sec for each 2000 threads we create
-    t = N / 2000
+    t = N / 1000
     print(f"THREADS ({N = :_}; {t = :.1f}s):")
     with trace.Trace() as trace_global:
         with trace.Trace() as trace_create:
@@ -23,6 +23,7 @@ def main():
         with trace.Trace() as trace_run:
             [thread.start() for thread in threads]
         [thread.join() for thread in threads]
+
         #del threads
         #import gc; gc.collect()
 
