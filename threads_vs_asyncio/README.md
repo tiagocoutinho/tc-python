@@ -2,7 +2,7 @@
 
 Fight!
 
-# Run
+## Run
 
 ```bash
 $ python coro.py 10_000
@@ -38,7 +38,7 @@ time to create threads = 0.083
 ## Monitor
 
 ```bash
-watch -n 0.1 'ps aux | egrep "CPU|coro.py|threaded.py" | grep -v grep'
+watch -n 0.1 'ps u | egrep "CPU|coro.py|threaded.py" | grep -v grep'
 ```
 
 

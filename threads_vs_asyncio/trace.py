@@ -28,3 +28,9 @@ class Trace:
     @property
     def dm(self):
         return rss() - self.rss_start
+
+
+MB = 1024 * 1024
+
+def mem(i):
+    return f"{i / MB:_.1f}MB"
