@@ -172,7 +172,7 @@ def main():
     from pyglet.window import Window
     window = Window(caption='Mesh demo')
     mesh = demo2(window)
-    print mesh
+    print( mesh)
     @window.event
     def on_draw():
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
