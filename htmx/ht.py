@@ -1,23 +1,29 @@
+def render_attr(key: str, value):
+    if value is True:
+        return key
+    elif value is False:
+        return ""
+    return f'{key}="{value}"'
 
+def render_attrs(options):
+    return " ".join(render_attr(k, v) for k, v in options.items())
 
+def render(tag, children, attrs):
+    children = "".join(children)
+    attrs = render_attrs(attrs)
+    if children:
+        start = f"<{tag} {attrs}>" if attrs else f"<{tag}>"
+        return f"{start}{children}</{tag}>"
+    return f"<{tag} {attrs}/>"
 
 class Tag:
     def __init__(self, name):
         self.name = name
     
     def render(self, *children, **options):
-        children = "".join(children)
-        options = " ".join(
-            f'{name}="{value}"' for name, value in options.items()
-        )
-        return f"<{self.name} {options}>{children}</{self.name}>"
+        return render(self.name, children, options)
 
     __call__ = render
-
-
-
-
-def noop(*args, **kwargs): return ""
 
 TAG_NAMES = [
     "a", "abbr", "address", "area", "article", "aside", "audio", "b", "base", "bdi", "bdo",
@@ -37,14 +43,16 @@ def _fill_tags(d):
         name = name.upper()
         d[name] = Tag(name)
 
+
 _fill_tags(locals())
+
 
 def main():
     html = HTML(
         HEAD(
             TITLE("Hello!"),
             SCRIPT(src="/bla"),
-            LINK(href="", rel="")
+            LINK(href="", rel="", defer=True)
         )
     )
     print(html)
