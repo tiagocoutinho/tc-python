@@ -23,30 +23,30 @@ def render_simple(tag: str, children: Iterable[str], attrs) -> str:
     return f"<{tag} {attrs}/>"
 
 
-class Tag:
-    def __init__(self, name):
-        self.name = name
-    
-    def render(self, *children, **options):
-        return render_simple(self.name, children, options)
-
-    __call__ = render
-
-
-def pretty_render(elem, level=0, indent="  ", endl="\n"):
+def iter_render_pretty(elem, level=0, indent="  ", endl="\n"):
     prefix = level * indent
     if isinstance(elem, str):
-        return f"{prefix}{elem}"
+        yield f"{prefix}{elem}{endl}"
+        return
     tag = elem.tag
     attrs = render_attrs(elem.attrs)
     children = elem.children
-    if children:
-        start = f"{prefix}<{tag} {attrs}>" if attrs else f"{prefix}<{tag}>"
-        if len(children) == 1 and isinstance(children[0], str):
-            return f"{start}{children[0]}</{tag}>"
-        children = endl.join(pretty_render(child, level+1, indent, endl) for child in children)
-        return f"{start}{endl}{children}{endl}{prefix}</{tag}>"
-    return f"{prefix}<{tag} {attrs}/>"
+    if not children:
+        yield f"{prefix}<{tag} {attrs}/>{endl}"
+        return
+    
+    start = f"{prefix}<{tag} {attrs}>" if attrs else f"{prefix}<{tag}>"
+    if len(children) == 1 and isinstance(children[0], str):
+        yield f"{start}{children[0]}</{tag}>{endl}"
+        return
+    yield f"{start}{endl}"
+    for child in children:
+        yield from iter_render_pretty(child, level+1, indent, endl)
+    yield f"{prefix}</{tag}>{endl}"
+
+
+def render_pretty(elem, level=0, indent="  ", endl="\n"):
+    return "".join(iter_render_pretty(elem, level=level, indent=indent, endl=endl))
 
 
 class Element:
@@ -79,22 +79,9 @@ def _fill_tags(d):
         klass = types.new_class(name, (Element,))
         klass.tag = name.upper()
         d[name] = klass
-        name = name.upper()
-        d[name] = Tag(name)
 
 
 _fill_tags(locals())
-
-
-def main():
-    html = HTML(
-        HEAD(
-            TITLE("Hello!"),
-            SCRIPT(src="/bla"),
-            LINK(href="", rel="", defer=True)
-        )
-    )
-    print(html)
 
 
 def sample():
@@ -119,7 +106,7 @@ def main2(level=0, indent="  ", end="\n"):
     doc = sample()
     print(doc)
     print(80*"=")
-    print(pretty_render(doc, level, indent, end))
+    print(render_pretty(doc, level, indent, end))
     print(80*"=")
 
 
