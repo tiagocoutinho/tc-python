@@ -1,3 +1,7 @@
+import types
+from collections.abc import Iterable
+
+
 def render_attr(key: str, value):
     if value is True:
         return key
@@ -8,7 +12,7 @@ def render_attr(key: str, value):
 def render_attrs(options):
     return " ".join(render_attr(k, v) for k, v in options.items())
 
-def render(tag, children, attrs):
+def render(tag: str, children: Iterable[str], attrs) -> str:
     children = "".join(children)
     attrs = render_attrs(attrs)
     if children:
@@ -25,6 +29,22 @@ class Tag:
 
     __call__ = render
 
+
+class Element:
+    def __init__(self, *children, **attrs):
+        self.children = children
+        self.attrs = attrs
+    
+    @staticmethod
+    def render_child(c):
+        return c if isinstance(c, str) else c.render()
+
+    def render(self):
+        children = (self.render_child(child) for child in self.children)
+        tag = type(self).__name__
+        return render(tag, children, self.attrs)
+
+
 TAG_NAMES = [
     "a", "abbr", "address", "area", "article", "aside", "audio", "b", "base", "bdi", "bdo",
     "blockquote", "body", "br", "button", "canvas", "caption", "cite", "code", "col", "colgroup",
@@ -40,6 +60,8 @@ TAG_NAMES = [
 
 def _fill_tags(d):
     for name in TAG_NAMES:
+        d[name] = types.new_class(name, (Element,))
+
         name = name.upper()
         d[name] = Tag(name)
 
@@ -56,6 +78,18 @@ def main():
         )
     )
     print(html)
+
+
+def main2():
+    doc = html(
+        head(
+            title("Hello!"),
+            script(src="/bla"),
+            link(href="", rel="", defer=True)
+        )
+    )
+    print(doc.render())
+
 
 if __name__ == "__main__":
     main()
