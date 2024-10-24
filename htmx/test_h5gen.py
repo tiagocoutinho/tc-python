@@ -1,17 +1,18 @@
-import h5gen as h
+from regex import D
+from h5gen import Html, Head, Title, Link, Script, Body, H1, P, I, Div, render_pretty
 
 
-SAMPLE = h.html(
-    h.head(
-        h.title("Sample Page"),
-        h.link(rel="stylesheet", href="style.css"),
-        h.script(src="https://unpkg.com/htmx.org@2.0.3", defer=True, dont_show=False),
+SAMPLE = Html(
+    Head(
+        Title("Sample Page"),
+        Link(rel="stylesheet", href="style.css"),
+        Script(src="https://unpkg.com/htmx.org@2.0.3", defer=True, dont_show=False),
     ),
-    h.body(
-        h.h1("Welcome to My Website"),
-        h.p("This is a paragraph."),
-        h.div(
-            h.p("Another paragraph inside an ", h.i("italic"), " div."),
+    Body(
+        H1("Welcome to My Website"),
+        P("This is a paragraph."),
+        Div(
+            P("Another paragraph inside an ", I("italic"), " div."),
             id="content",
         ),
     ),
@@ -46,4 +47,4 @@ def test_render():
 
 
 def test_render_pretty():
-    assert h.render_pretty(SAMPLE) == EXPECTED_SAMPLE_RENDER_PRETTY
+    assert render_pretty(SAMPLE) == EXPECTED_SAMPLE_RENDER_PRETTY

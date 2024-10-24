@@ -179,7 +179,10 @@ def _fill_tags(d):
     for name in TAG_NAMES:
         klass = types.new_class(name, (Element,))
         klass.tag = name.upper()
-        d[name] = klass
+        d[name.capitalize()] = klass
 
 
 _fill_tags(locals())
+
+
+## H
