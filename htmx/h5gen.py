@@ -183,34 +183,3 @@ def _fill_tags(d):
 
 
 _fill_tags(locals())
-
-
-def sample():
-    return html(
-        head(
-            title("Sample Page"),
-            link(rel="stylesheet", href="style.css"),
-            script(src="https://unpkg.com/htmx.org@2.0.3", defer=True),
-        ),
-        body(
-            h1("Welcome to My Website"),
-            p("This is a paragraph."),
-            div(
-                p("Another paragraph inside a div."),
-                id="content",
-            ),
-        ),
-    )
-
-
-def main(level=0, indent="  ", end="\n"):
-    print(80 * "=")
-    doc = sample()
-    print(doc)
-    print(80 * "=")
-    print(render_pretty(doc, level, indent, end))
-    print(80 * "=")
-
-
-if __name__ == "__main__":
-    main()
