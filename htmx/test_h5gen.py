@@ -18,28 +18,29 @@ SAMPLE = Html(
     ),
 )
 
-EXPECTED_SAMPLE_RENDER = """<HTML><HEAD><TITLE>Sample Page</TITLE><LINK rel="stylesheet" href="style.css"/><SCRIPT src="https://unpkg.com/htmx.org@2.0.3" defer /></HEAD><BODY><H1>Welcome to My Website</H1><P>This is a paragraph.</P><DIV id="content"><P>Another paragraph inside an <I>italic</I> div.</P></DIV></BODY></HTML>"""
-
-EXPECTED_SAMPLE_RENDER_PRETTY ="""\
-<HTML>
-  <HEAD>
-    <TITLE>Sample Page</TITLE>
-    <LINK rel="stylesheet" href="style.css"/>
-    <SCRIPT src="https://unpkg.com/htmx.org@2.0.3" defer />
-  </HEAD>
-  <BODY>
-    <H1>Welcome to My Website</H1>
-    <P>This is a paragraph.</P>
-    <DIV id="content">
-      <P>
+EXPECTED_SAMPLE_RENDER = """<!doctype html><html><head><title>Sample Page</title><link rel="stylesheet" href="style.css"><script src="https://unpkg.com/htmx.org@2.0.3" defer></script></head><body><h1>Welcome to My Website</h1><p>This is a paragraph.</p><div id="content"><p>Another paragraph inside an <i>italic</i> div.</p></div></body></html>"""
+# <!doctype html><html><head><title>Sample Page</title><link rel="stylesheet" href="style.css"><script src="https://unpkg.com/htmx.org@2.0.3" defer ></script></head><body><h1>Welcome to My Website</h1><p>This is a paragraph.</p><div id="content"><p>Another paragraph inside an <i>italic</i> div.</p></div></body></html>                     # <!doctype html><html><head><title>Sample Page</{tag}><link rel="stylesheet" href="style.css"><script src="https://unpkg.com/htmx.org@2.0.3" defer ></{tag}></{tag}><body><h1>Welcome to My Website</{tag}><p>This is a paragraph.</{tag}><div id="content"><p>Another paragraph inside an <i>italic</{tag}> div.</{tag}></{tag}></{tag}></{tag}>
+EXPECTED_SAMPLE_RENDER_PRETTY = """\
+<!doctype html>
+<html>
+  <head>
+    <title>Sample Page</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/htmx.org@2.0.3" defer></script>
+  </head>
+  <body>
+    <h1>Welcome to My Website</h1>
+    <p>This is a paragraph.</p>
+    <div id="content">
+      <p>
         Another paragraph inside an 
-        <I>italic</I>
+        <i>italic</i>
          div.
-      </P>
-    </DIV>
-  </BODY>
-</HTML>
-""" 
+      </p>
+    </div>
+  </body>
+</html>
+"""
 
 
 def test_render():
