@@ -1,129 +1,8 @@
 import functools
 import types
 
-TAG_NAMES = [
-    "a",
-    "abbr",
-    "address",
-    "area",
-    "article",
-    "aside",
-    "audio",
-    "b",
-    "base",
-    "bdi",
-    "bdo",
-    "blockquote",
-    "body",
-    "br",
-    "button",
-    "canvas",
-    "caption",
-    "cite",
-    "code",
-    "col",
-    "colgroup",
-    "data",
-    "datalist",
-    "dd",
-    "del",
-    "details",
-    "dfn",
-    "dialog",
-    "div",
-    "dl",
-    "dt",
-    "em",
-    "embed",
-    "fieldset",
-    "figcaption",
-    "figure",
-    "footer",
-    "form",
-    "h1",
-    "h2",
-    "h3",
-    "h4",
-    "h5",
-    "h6",
-    "head",
-    "header",
-    "hr",
-    "html",
-    "i",
-    "iframe",
-    "img",
-    "input",
-    "ins",
-    "kbd",
-    "label",
-    "legend",
-    "li",
-    "link",
-    "main",
-    "map",
-    "mark",
-    "meta",
-    "meter",
-    "nav",
-    "noscript",
-    "object",
-    "ol",
-    "optgroup",
-    "option",
-    "output",
-    "p",
-    "param",
-    "picture",
-    "pre",
-    "progress",
-    "q",
-    "rp",
-    "rt",
-    "ruby",
-    "s",
-    "samp",
-    "script",
-    "section",
-    "select",
-    "small",
-    "source",
-    "span",
-    "strong",
-    "style",
-    "sub",
-    "summary",
-    "sup",
-    "svg",
-    "table",
-    "tbody",
-    "td",
-    "template",
-    "textarea",
-    "tfoot",
-    "th",
-    "thead",
-    "time",
-    "title",
-    "tr",
-    "track",
-    "u",
-    "ul",
-    "var",
-    "video",
-    "wbr",
-]
-
-NO_END_TAG = {"link", "meta"}
-
-
-def render_attr(key, value):
-    return key if value is True else f'{key}="{value}"'
-
-
-def render_attrs(options):
-    return " ".join(render_attr(k, v) for k, v in options.items() if v is not False)
-
+from h5gen.constants import NO_END_TAG, TAG_NAMES
+from h5gen.tools import py_dict_to_attrs, render_attrs
 
 def iter_render(elem, level=0, indent="  ", endl="\n"):
     prefix = level * indent
@@ -153,10 +32,6 @@ def render(elem, level=0, indent="  ", endl="\n"):
     return f"{elem.prefix}{endl}" + "".join(
         iter_render(elem, level=level, indent=indent, endl=endl)
     )
-
-
-def py_dict_to_attrs(attrs: dict[str, str]) -> dict[str, str]:
-    return {name.strip("_").replace("_", "-"): value for name, value in attrs.items()}
 
 
 class Element:
