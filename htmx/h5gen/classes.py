@@ -4,6 +4,7 @@ import types
 from h5gen.constants import NO_END_TAG, TAG_NAMES
 from h5gen.tools import py_dict_to_attrs, render_attrs
 
+
 def iter_render(elem, level=0, indent="  ", endl="\n"):
     prefix = level * indent
     if isinstance(elem, str):

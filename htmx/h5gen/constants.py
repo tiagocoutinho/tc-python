@@ -116,3 +116,7 @@ NO_END_TAG = {"link", "meta"}
 PREFIXES = {
     "html": "<!doctype html>"
 }
+
+DEFAULT_ENDL="\n"
+
+DEFAULT_INDENT="  "

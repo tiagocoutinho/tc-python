@@ -1,50 +1,50 @@
-import textwrap
 
-from h5gen.constants import NO_END_TAG, TAG_NAMES, PREFIXES
+__all__ = []
+
+from h5gen.constants import DEFAULT_ENDL, DEFAULT_INDENT, NO_END_TAG, TAG_NAMES, PREFIXES
 from h5gen.tools import render_attrs
 
+ENDL_INDENT = DEFAULT_ENDL + DEFAULT_INDENT
 
-def render_simple(tag, children, attrs) -> str:
-    children = "".join(children)
+
+def _iter_render(tag, children, attrs):
+    if prefix := PREFIXES.get(tag):
+        yield prefix
     attrs = render_attrs(attrs)
     start = f"<{tag} {attrs}>" if attrs else f"<{tag}>"
     end = "" if tag in NO_END_TAG else f"</{tag}>"
-    return f"{start}{children}{end}"
 
-
-def iter_render(tag, children, attrs, indent="  ", endl="\n"):
-    prefix = PREFIXES.get(tag)
-    prefix = f"{prefix}{endl}" if prefix else ""
-    etag = "" if tag in NO_END_TAG else f"</{tag}>"
-    attrs = render_attrs(attrs)
-    start = f"{prefix}<{tag} {attrs}>" if attrs else f"{prefix}<{tag}>"
-
-    if not children:
-        yield f"{start}{etag}{endl}"
+    n = len(children)
+    if not n:
+        yield f"{start}{end}"
+        return
+    
+    if n == 1 and not children[0].startswith("<"):
+        yield f"{start}{children[0]}{end}"
         return
 
-    yield f"{start}{endl}"
+    yield f"{start}"
     for child in children:
-        yield textwrap.indent(child, indent)
+        yield child.replace(DEFAULT_ENDL, ENDL_INDENT)
         if not child.startswith("<"):
-            yield endl
-
-    yield f"{etag}{endl}"
-
-
-def render(tag, children, attrs, indent="  ", endl="\n"):
-    return "".join(iter_render(tag, children, attrs, indent=indent, endl=endl))
+            yield ""
+    yield end
 
 
-def create_element(tag_name):
+def _render(tag, children, attrs):
+    return DEFAULT_ENDL.join(_iter_render(tag, children, attrs))
+
+
+def _create_element(tag_name):
     def f(*children, **attrs):
-        return render(tag_name, children, attrs)
+        return _render(tag_name, children, attrs)
     f.__name__ = tag_name
+    __all__.append(tag_name)
     return f
 
 
-def create_elements(tag_names):
-    return {tag_name: create_element(tag_name) for tag_name in tag_names}
+def _create_elements(tag_names):
+    return {tag_name: _create_element(tag_name) for tag_name in tag_names}
 
 
-locals().update(create_elements(TAG_NAMES))
+locals().update(_create_elements(TAG_NAMES))
