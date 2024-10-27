@@ -120,3 +120,21 @@ PREFIXES = {
 DEFAULT_ENDL="\n"
 
 DEFAULT_INDENT="  "
+## HTMX
+
+HTMX_UNPKG_SOURCE = "https://unpkg.com/htmx.org@2.0.3/dist/htmx.min.js"
+HTMX_UNPKG_EXT_TEMPLATE = "https://unpkg.com/htmx-ext-{name}@{version}/{name}.js".format
+HTMX_JSDELIVR_SOURCE = "https://cdn.jsdelivr.net/npm/htmx.org@2.0.3/dist/htmx.min.js"
+HTMX_JSDELIVR_EXT_TEMPLATE = (
+    "https://cdn.jsdelivr.net/npm/htmx-ext-{name}@{version}/{name}.js".format
+)
+HTMX_EXTENSIONS = {
+    "preload": {
+        "url": HTMX_JSDELIVR_EXT_TEMPLATE(name="preload", version="2.0.1"),
+        "ext_name": "preload",
+    },
+}
+## Favicon
+
+ICON_NULL = "data:;base64,iVBORw0KGgo="
+PICOCSS_SOURCE = "https://cdn.jsdelivr.net/npm/@picocss/pico@2.0.6/css/pico.min.css"

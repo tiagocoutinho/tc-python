@@ -1,8 +1,8 @@
 import functools
 import types
 
-from h5gen.constants import NO_END_TAG, TAG_NAMES
-from h5gen.tools import py_dict_to_attrs, render_attrs
+from h5gen.constants import HTMX_EXTENSIONS, HTMX_JSDELIVR_SOURCE, ICON_NULL, NO_END_TAG, PICOCSS_SOURCE, TAG_NAMES
+from h5gen.tools import render_attrs
 
 
 def iter_render(elem, level=0, indent="  ", endl="\n"):
@@ -43,7 +43,7 @@ class Element:
 
     def __init__(self, *children, **attrs):
         self.children = children
-        self.attrs = py_dict_to_attrs(attrs)
+        self.attrs = attrs
 
     def __str__(self):
         return render(self, 0, "", "")
@@ -71,11 +71,6 @@ Html.prefix = "<!doctype html>"
 
 Checkbox = functools.partial(Input, type="checkbox")
 
-## Favicon
-
-ICON_NULL = "data:;base64,iVBORw0KGgo="
-
-
 def Favicon(href, type="image/x-icon", **kwargs):
     return Link(rel="icon", href=href, type=type, **kwargs)
 
@@ -92,24 +87,6 @@ viewport = Viewport(content="width=device-width, initial-scale=1")
 ## Javascript
 
 JS = functools.partial(Script, type="text/javascript")
-
-## HTMX
-
-HTMX_UNPKG_SOURCE = "https://unpkg.com/htmx.org@2.0.3/dist/htmx.min.js"
-HTMX_UNPKG_EXT_TEMPLATE = "https://unpkg.com/htmx-ext-{name}@{version}/{name}.js".format
-
-HTMX_JSDELIVR_SOURCE = "https://cdn.jsdelivr.net/npm/htmx.org@2.0.3/dist/htmx.min.js"
-HTMX_JSDELIVR_EXT_TEMPLATE = (
-    "https://cdn.jsdelivr.net/npm/htmx-ext-{name}@{version}/{name}.js".format
-)
-
-HTMX_EXTENSIONS = {
-    "preload": {
-        "url": HTMX_JSDELIVR_EXT_TEMPLATE(name="preload", version="2.0.1"),
-        "ext_name": "preload",
-    },
-}
-
 
 def HtmxScript(defer=True, **kwargs):
     return Script(src=HTMX_JSDELIVR_SOURCE, defer=defer, **kwargs)
@@ -166,9 +143,6 @@ def Css(href, **kwargs):
 
 
 # Pico CSS
-
-PICOCSS_SOURCE = "https://cdn.jsdelivr.net/npm/@picocss/pico@2.0.6/css/pico.min.css"
-
 
 pico_css = Css(href=PICOCSS_SOURCE)
 
