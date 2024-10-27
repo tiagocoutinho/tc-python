@@ -109,7 +109,7 @@ def HtmxExt(name, defer=True, **kwargs):
 
 
 def Htmx(
-    payload,
+    *payload,
     title="h5gen page",
     icon=ICON_NULL,
     extra_headers=(),
@@ -120,12 +120,12 @@ def Htmx(
     """Helper that creates an HTML document with prepared HTMX headers
 
     Args:
-        payload (Body): an instance of Body
+        payload (str): body content
         title (str, optional): Page title. Defaults to "h5gen page".
         icon (_type_, optional): page fav icon. Defaults to null icon.
         extra_headers (tuple, optional): _description_. Defaults to ().
         extensions (tuple, optional): _description_. Defaults to ().
-
+        body_attrs (dict, optional): extra body attrs (ex: `{"class": "body"}`)
     Returns:
         _type_: _description_
     """
@@ -139,7 +139,7 @@ def Htmx(
             hx_exts.add(ext["ext_name"])
             scripts.append(HtmxExt(extension))
         body_attrs["hx-ext"] = ",".join(hx_exts)
-    body = Body(payload, **body_attrs)
+    body = Body(*payload, **body_attrs)
     return Html(
         Head(
             Title(title),
