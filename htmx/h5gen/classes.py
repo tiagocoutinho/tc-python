@@ -1,7 +1,14 @@
 import functools
 import types
 
-from h5gen.constants import HTMX_EXTENSIONS, HTMX_JSDELIVR_SOURCE, ICON_NULL, NO_END_TAG, PICOCSS_SOURCE, TAG_NAMES
+from h5gen.constants import (
+    HTMX_EXTENSIONS,
+    HTMX_JSDELIVR_SOURCE,
+    ICON_NULL,
+    NO_END_TAG,
+    PICOCSS_SOURCE,
+    TAG_NAMES,
+)
 from h5gen.tools import render_attrs
 
 
@@ -71,6 +78,7 @@ Html.prefix = "<!doctype html>"
 
 Checkbox = functools.partial(Input, type="checkbox")
 
+
 def Favicon(href, type="image/x-icon", **kwargs):
     return Link(rel="icon", href=href, type=type, **kwargs)
 
@@ -87,6 +95,7 @@ viewport = Viewport(content="width=device-width, initial-scale=1")
 ## Javascript
 
 JS = functools.partial(Script, type="text/javascript")
+
 
 def HtmxScript(defer=True, **kwargs):
     return Script(src=HTMX_JSDELIVR_SOURCE, defer=defer, **kwargs)

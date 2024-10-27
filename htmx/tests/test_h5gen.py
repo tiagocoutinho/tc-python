@@ -1,5 +1,5 @@
 from regex import D
-from h5gen import Html, Head, Title, Link, Script, Body, H1, P, I, Div, render_pretty
+from h5gen import Html, Head, Title, Link, Script, Body, H1, P, I, Div, render
 
 
 SAMPLE = Html(
@@ -48,4 +48,4 @@ def test_render():
 
 
 def test_render_pretty():
-    assert render_pretty(SAMPLE) == EXPECTED_SAMPLE_RENDER_PRETTY
+    assert render(SAMPLE) == EXPECTED_SAMPLE_RENDER_PRETTY

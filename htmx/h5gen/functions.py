@@ -1,33 +1,47 @@
-
-__all__ = ["CSS", "JS", "Checkbox", "Favicon", "favicon_null", "Viewport", "viewport", "utf_8", "HtmxScript", "HtmxExt", "Htmx"]
+__all__ = [
+    "CSS",
+    "JS",
+    "Checkbox",
+    "Favicon",
+    "favicon_null",
+    "Viewport",
+    "viewport",
+    "utf_8",
+    "HtmxScript",
+    "HtmxExt",
+    "Htmx",
+]
 import functools
 
-from h5gen.constants import DEFAULT_ENDL, DEFAULT_INDENT, HTMX_EXTENSIONS, HTMX_JSDELIVR_SOURCE, ICON_NULL, NO_END_TAG, PICOCSS_SOURCE, TAG_NAMES, PREFIXES
+from h5gen.constants import (
+    DEFAULT_ENDL,
+    DEFAULT_INDENT,
+    HTMX_EXTENSIONS,
+    HTMX_JSDELIVR_SOURCE,
+    ICON_NULL,
+    PICOCSS_SOURCE,
+    TAGS,
+)
 from h5gen.tools import render_attrs
 
 ENDL_INDENT = DEFAULT_ENDL + DEFAULT_INDENT
 
 
 def _iter_render(tag, children, attrs):
-    if prefix := PREFIXES.get(tag):
-        yield prefix
     attrs = render_attrs(attrs)
-    start = f"<{tag} {attrs}>" if attrs else f"<{tag}>"
-    end = "" if tag in NO_END_TAG else f"</{tag}>"
+    start, start_with_attrs, end = TAGS[tag]
+    start = start_with_attrs.format(attrs) if attrs else start
 
-    n = len(children)
-    if not n:
+    if not children:
         yield f"{start}{end}"
         return
-    
-    if n == 1 and not children[0].startswith("<"):
+
+    if len(children) == 1 and not children[0].startswith("<"):
         yield f"{start}{children[0]}{end}"
         return
 
     yield f"{start}"
     for child in children:
-        if not isinstance(child, str):
-            breakpoint()
         yield child.replace(DEFAULT_ENDL, ENDL_INDENT)
         if not child.startswith("<"):
             yield ""
@@ -40,21 +54,24 @@ def _render(tag, children, attrs):
 
 def _create_element(tag_name):
     fname = tag_name.capitalize()
+
     def f(*children, **attrs):
         return _render(tag_name, children, attrs)
+
     f.__name__ = fname
     __all__.append(fname)
     return f
 
 
-def _create_elements(tag_names):
-    return {tag_name.capitalize(): _create_element(tag_name) for tag_name in tag_names}
+def _create_elements():
+    return {tag_name.capitalize(): _create_element(tag_name) for tag_name in TAGS}
 
 
-locals().update(_create_elements(TAG_NAMES))
+locals().update(_create_elements())
 
 
 # Some helpers
+
 
 def CSS(*children, **attrs):
     if not children and "href" in attrs:
@@ -63,11 +80,13 @@ def CSS(*children, **attrs):
     return Style(*children, **attrs)
 
 
-JS = functools.partial(Script, type=="text/javascript")
+JS = functools.partial(Script, type == "text/javascript")
 Checkbox = functools.partial(input, type="checkbox")
+
 
 def Favicon(href, type="image/x-icon", **kwargs):
     return Link(rel="icon", href=href, type=type, **kwargs)
+
 
 favicon_null = Favicon("data:;base64,iVBORw0KGgo=")
 
@@ -80,6 +99,7 @@ viewport = Viewport(content="width=device-width, initial-scale=1")
 
 # HTMX
 
+
 def HtmxScript(defer=True, **kwargs):
     return Script(src=HTMX_JSDELIVR_SOURCE, defer=defer, **kwargs)
 
@@ -89,7 +109,13 @@ def HtmxExt(name, defer=True, **kwargs):
 
 
 def Htmx(
-    payload, title="h5gen page", icon=ICON_NULL, extra_headers=(), extensions=(), lang="en", body_attrs=None,
+    payload,
+    title="h5gen page",
+    icon=ICON_NULL,
+    extra_headers=(),
+    extensions=(),
+    lang="en",
+    body_attrs=None,
 ):
     """Helper that creates an HTML document with prepared HTMX headers
 
@@ -125,7 +151,7 @@ def Htmx(
         ),
         body,
         lang=lang,
-    ) 
+    )
 
 
 # Pico CSS

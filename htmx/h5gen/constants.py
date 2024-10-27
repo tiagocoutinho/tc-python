@@ -112,14 +112,19 @@ TAG_NAMES = [
 ]
 NO_END_TAG = {"link", "meta"}
 
-
-PREFIXES = {
-    "html": "<!doctype html>"
+TAGS = {
+    t: (f"<{t}>", f"<{t} {{}}>", "" if t in NO_END_TAG else f"</{t}>")
+    for t in TAG_NAMES
 }
 
-DEFAULT_ENDL="\n"
+# Hard code html
+TAGS["html"] = ("<!doctype html>\n<html>", "<!doctype html>\n<html {}>", "</html>")
 
-DEFAULT_INDENT="  "
+PREFIXES = {"html": "<!doctype html>"}
+
+DEFAULT_ENDL = "\n"
+
+DEFAULT_INDENT = "  "
 ## HTMX
 
 HTMX_UNPKG_SOURCE = "https://unpkg.com/htmx.org@2.0.3/dist/htmx.min.js"
