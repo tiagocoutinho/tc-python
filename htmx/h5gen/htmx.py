@@ -1,3 +1,4 @@
+import math
 from h5gen.constants import ICON_NULL
 from h5gen.functions import (
     Script,
@@ -5,6 +6,16 @@ from h5gen.functions import (
     Head,
     Title,
     Body,
+    Caption,
+    Table,
+    Tr,
+    Td,
+    Th,
+    Tbody,
+    Thead,
+    Tfoot,
+    Button,
+    Div,
     JS,
     Favicon,
     utf_8,
@@ -84,3 +95,92 @@ def Htmx(
         body,
         lang=lang,
     )
+
+
+def calculate_window(center, window_size, min_value, max_value):
+    # Ensure window size is odd to keep the center in the middle
+    if window_size % 2 == 0:
+        raise ValueError("Window size must be an odd number.")
+
+    half_window = window_size // 2
+    # Calculate start and end of the window
+    start = max(center - half_window, min_value)
+    end = min(center + half_window, max_value)
+
+    # Adjust start and end if window is smaller than specified size
+    if end - start + 1 < window_size:
+        if start == min_value:
+            end = min(start + window_size - 1, max_value)
+        elif end == max_value:
+            start = max(end - window_size + 1, min_value)
+
+    return range(start, end + 1)
+
+
+def HXTableButton(*items, disabled=False, role="button", **kwargs):
+    if disabled:
+        kwargs["disabled"] = True
+    if role:
+        kwargs["role"] = role
+    return Button(*[str(i) for i in items], **kwargs)
+
+
+def HXTable(
+    id, rows, page, page_size, total_rows, url, headers=None, caption=None
+):
+    args = []
+    if caption:
+        args.append(Caption(caption))
+    if headers is not None:
+        head = Thead(Tr(*(Th(cell) for cell in headers)))
+        args.append(head)
+    body =Tbody(*(Tr(*[Td(col) for col in row]) for row in rows))
+    args.append(body)
+
+    total_columns = len(headers)
+    nb_pages = math.ceil(total_rows / page_size)
+    user_page = page + 1
+
+    def btn(text, page, **kwargs):
+        return HXTableButton(
+            text,
+            hx_get=f"{url}?page={page}&page_size={page_size}",
+            hx_target=f"#{id}",
+            hx_swap="outerHTML",
+            **kwargs,
+        )
+
+    NB_PAGE_BUTTONS = 5
+    page_buttons = (
+        btn(i + 1, i, cls="" if i == page else "current-page-button", disabled=i == page)
+        for i in calculate_window(page, NB_PAGE_BUTTONS, 0, nb_pages - 1)
+    )
+
+    previous_page_group = max(0, page - NB_PAGE_BUTTONS)
+    previous_page = max(0, page - 1)
+    next_page = min(nb_pages - 1, page + 1)
+    next_page_group = min(nb_pages - 1, page + NB_PAGE_BUTTONS)
+    buttons = (
+        btn(3*"&lt;", 0, disabled=page == 0, data_tooltip="Go to fist page"),
+        btn(2*"&lt;", previous_page_group, disabled=page == 0, data_tooltip=f"Back to page {previous_page_group + 1}"),
+        btn(1*"&lt;", previous_page, disabled=page == 0, data_tooltip=f"Go to page {previous_page + 1}"),
+        *page_buttons,
+        btn(1*"&gt;", next_page, disabled=user_page >= nb_pages, data_tooltip=f"Go to page {next_page + 1}"),
+        btn(
+            2*"&gt;",
+            next_page_group,
+            disabled=user_page >= nb_pages,
+            data_tooltip=f"Forward to page {next_page_group + 1}"
+        ),
+        btn(3*"&gt;", nb_pages - 1, disabled=user_page >= nb_pages, data_tooltip=f"Go to last page ({nb_pages})"),
+    )
+
+    pagination = Td(
+        Div(
+            *buttons,
+            role="group",
+        ),
+        colspan=total_columns - 1,
+    )
+    args.append(Tfoot(Tr(Th(f"Total: {total_rows}"), pagination)))
+    return Table(*args, id=id)
