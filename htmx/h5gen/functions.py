@@ -28,8 +28,10 @@ def render_attrs(options):
 
 
 def iter_render(tag, children, attrs):
-    attrs = render_attrs(attrs)
+    if not children and not attrs:
+        return f"<{tag} />"
     start, start_with_attrs, end = TAGS[tag]
+    attrs = render_attrs(attrs)
     start = start_with_attrs.format(attrs) if attrs else start
 
     if not children:
