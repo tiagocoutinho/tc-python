@@ -80,9 +80,9 @@ def CSS(*children, **attrs):
     return Style(*children, **attrs)
 
 
-JS = functools.partial(Script, type == "text/javascript")
-Checkbox = functools.partial(input, type="checkbox")
-
+JS = functools.partial(Script, type="text/javascript")
+Checkbox = functools.partial(Input, type="checkbox")
+HiddenInput = functools.partial(Input, type="hidden")
 
 def Favicon(href, type="image/x-icon", **kwargs):
     return Link(rel="icon", href=href, type=type, **kwargs)
