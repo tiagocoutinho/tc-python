@@ -116,6 +116,7 @@ def Htmx(
     extensions=(),
     lang="en",
     body_attrs=None,
+    debug=False,
 ):
     """Helper that creates an HTML document with prepared HTMX headers
 
@@ -139,6 +140,9 @@ def Htmx(
             hx_exts.add(ext["ext_name"])
             scripts.append(HtmxExt(extension))
         body_attrs["hx-ext"] = ",".join(hx_exts)
+    if debug:
+        debug = JS("document.body.addEventListener('htmx:load', function(evt) {htmx.logAll();});")
+        payload = (*payload, debug)
     body = Body(*payload, **body_attrs)
     return Html(
         Head(
