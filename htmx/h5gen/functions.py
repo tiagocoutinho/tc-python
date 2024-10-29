@@ -40,7 +40,7 @@ def _iter_render(tag, children, attrs):
         yield f"{start}{children[0]}{end}"
         return
 
-    yield f"{start}"
+    yield start
     for child in children:
         yield child.replace(DEFAULT_ENDL, ENDL_INDENT)
         if not child.startswith("<"):
